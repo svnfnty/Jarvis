@@ -1,1 +1,4 @@
+# Ignore all .ini files except config.ini
+*.ini
+!config.ini
 config.ini

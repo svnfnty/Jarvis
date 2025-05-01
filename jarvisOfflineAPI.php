@@ -8,7 +8,7 @@ class OfflineJarvis {
         while ($this->isSpeaking) {
             usleep(100000); // 100ms delay
         }
-        
+          
         $output = [];
         $command = 'python listen_once.py 2>&1';
         exec($command, $output, $return_var);
@@ -25,7 +25,6 @@ class OfflineJarvis {
     }
     
     public function talkToOllama($prompt) {
-
         $url = 'http://localhost:11434/api/generate';
         $data = [
             'model' => 'gemma:2b',
@@ -47,49 +46,56 @@ class OfflineJarvis {
             $result = file_get_contents($url, false, $context);
             
             if ($result === FALSE) {
+                error_log("Failed to connect to Ollama API.");
                 return "I'm having trouble connecting to my AI engine.";
             }
             
             $response = json_decode($result, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                error_log("JSON decoding error: " . json_last_error_msg());
+                return "I received an invalid response from the AI engine.";
+            }
+            
             return $response['response'] ?? "I didn't get a proper response.";
         } catch (Exception $e) {
+            error_log("Exception in talkToOllama: " . $e->getMessage());
             return "My AI service is currently unavailable.";
         }
     }
     
-   public function speak($text) {
-    if (empty($text)) return false;
+    public function speak($text) {
+        if (empty($text)) return false;
 
-    // Special handling for code blocks
-    $text = preg_replace_callback('/```.*?\n(.*?)```/s', function($matches) {
-        return 'code block: ' . str_replace(["'", "\n"], ["'", " "], $matches[1]);
-    }, $text);
+        // Special handling for code blocks
+        $text = preg_replace_callback('/```.*?\n(.*?)```/s', function($matches) {
+            return 'code block: ' . str_replace(["'", "\n"], ["'", " "], $matches[1]);
+        }, $text);
 
-    // General text cleaning
-    $text = htmlspecialchars_decode($text);
-    $text = preg_replace('/[^\p{L}\p{N}\s.,!?\-]/u', ' ', $text);
-    $text = addslashes($text);
+        // General text cleaning
+        $text = htmlspecialchars_decode($text);
+        $text = preg_replace('/[^\p{L}\p{N}\s.,!?\-]/u', ' ', $text);
+        $text = addslashes($text);
 
-      $psScript = <<<EOT
-        \$ErrorActionPreference = "Stop"
-        try {
-            Add-Type -AssemblyName System.Speech
-            \$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer
-            
-            # Try preferred voice, fallback to any available
-            \$voices = \$speak.GetInstalledVoices() | % { \$_.VoiceInfo.Name }
-            if ('Microsoft David Desktop' -in \$voices) {
-                \$speak.SelectVoice('Microsoft David Desktop')
+        $psScript = <<<EOT
+            \$ErrorActionPreference = "Stop"
+            try {
+                Add-Type -AssemblyName System.Speech
+                \$speak = New-Object System.Speech.Synthesis.SpeechSynthesizer
+                
+                # Try preferred voice, fallback to any available
+                \$voices = \$speak.GetInstalledVoices() | % { \$_.VoiceInfo.Name }
+                if ('Microsoft David Desktop' -in \$voices) {
+                    \$speak.SelectVoice('Microsoft David Desktop')
+                }
+                
+                \$speak.Rate = 1
+                \$speak.Volume = 100
+                \$speak.Speak('$text')
+                exit 0
+            } catch {
+                Write-Output \$_.Exception.Message
+                exit 1
             }
-            
-            \$speak.Rate = 2
-            \$speak.Volume = 100
-            \$speak.Speak('$text')
-            exit 0
-        } catch {
-            Write-Output \$_.Exception.Message
-            exit 1
-        }
         EOT;
         // Execute via temporary file
         $tempFile = tempnam(sys_get_temp_dir(), 'tts_') . '.ps1';
@@ -109,16 +115,16 @@ class OfflineJarvis {
             case 'quit':
             case 'shutdown':
             case 'shut down':
-                $this->speak("Shutting down. Goodbye.");
-                return ['action' => 'exit', 'response' => "Shutting down system."];
+                $this->speak("Shutting down. Goodbye, my friend.");
+                return ['action' => 'exit', 'response' => "System shutting down. Farewell."];
                 
             case 'time':
                 $time = date('g:i a');
-                return ['response' => "The current time is $time"];
+                return ['response' => "The current time is $time. How else may I assist you?"];
                 
             case 'date':
                 $date = date('l, F jS');
-                return ['response' => "Today is $date"];
+                return ['response' => "Today is $date. Anything else you'd like to know?"];
                 
             default:
                 return null;
