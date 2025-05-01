@@ -2,7 +2,8 @@
 
 class OfflineJarvis {
     private $isSpeaking = false;
-    
+    private $systemPrompt = "You are JARVIS, a highly intelligent and polite AI assistant. Speak in a formal yet friendly tone, and always aim to assist the user efficiently.";
+
     public function listenToMicrophone() {
         // Wait if currently speaking
         while ($this->isSpeaking) {
@@ -28,7 +29,7 @@ class OfflineJarvis {
         $url = 'http://localhost:11434/api/generate';
         $data = [
             'model' => 'gemma:2b',
-            'prompt' => $prompt,
+            'prompt' => $this->systemPrompt . "\nUser: " . $prompt,
             'stream' => false
         ];
         
