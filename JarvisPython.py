@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - JARVIS - %(levelna
 def main():
     logging.info("Initializing Jarvis voice recognition module...")
     r = sr.Recognizer()
-    with sr.Microphone() as source:
+    with sr.Microphone() as source: 
         r.adjust_for_ambient_noise(source, duration=0.5)
         logging.info("Microphone calibrated for ambient noise.")
         try:

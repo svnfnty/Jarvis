@@ -11,7 +11,7 @@ class OfflineJarvis {
         }
           
         $output = [];
-        $command = 'python listen_once.py 2>&1';
+        $command = 'python JarvisPython.py 2>&1';
         exec($command, $output, $return_var);
         
         // Enhanced filtering
